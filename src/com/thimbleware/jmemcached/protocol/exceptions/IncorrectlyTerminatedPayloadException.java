@@ -3,18 +3,23 @@ package com.thimbleware.jmemcached.protocol.exceptions;
 /**
  */
 public class IncorrectlyTerminatedPayloadException extends ClientException {
-    public IncorrectlyTerminatedPayloadException() {
-    }
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
-    public IncorrectlyTerminatedPayloadException(String s) {
-        super(s);
-    }
-
-    public IncorrectlyTerminatedPayloadException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
-
-    public IncorrectlyTerminatedPayloadException(Throwable throwable) {
-        super(throwable);
-    }
+	public IncorrectlyTerminatedPayloadException() {
+	}
+	
+	public IncorrectlyTerminatedPayloadException(String s) {
+		super(s);
+	}
+	
+	public IncorrectlyTerminatedPayloadException(String s, Throwable throwable) {
+		super(s, throwable);
+	}
+	
+	public IncorrectlyTerminatedPayloadException(Throwable throwable) {
+		super(throwable);
+	}
 }
