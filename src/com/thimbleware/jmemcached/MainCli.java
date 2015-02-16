@@ -33,7 +33,7 @@ import com.thimbleware.jmemcached.storage.mmap.MemoryMappedBlockStore;
  *
  * Arguments in general parallel those of the C implementation.
  */
-public class Main {
+public class MainCli {
 
     public static void main(String[] args) throws Exception {
         // look for external log4j.properties

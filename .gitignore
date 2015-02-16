@@ -6,4 +6,7 @@ nbproject
 target
 catalog.xml
 *~
-
+.classpath
+.project
+/bin/
+org.eclipse.jdt.core.prefs
