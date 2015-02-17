@@ -25,7 +25,6 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
 
-import com.thimbleware.jmemcached.storage.CacheStorage;
 import com.thimbleware.jmemcached.storage.hash.ConcurrentLinkedHashMap;
 import com.thimbleware.jmemcached.util.Bytes;
 
@@ -87,11 +86,6 @@ public class MainCli {
 			System.out.println("Setting ceiling memory size to default limit of " + Bytes.bytes(ceiling).megabytes() + "M");
 		}
 		
-		boolean binary = false;
-		if (cmdline.hasOption("b")) {
-			binary = true;
-		}
-		
 		long maxBytes;
 		if (cmdline.hasOption("m")) {
 			maxBytes = Bytes.valueOf(cmdline.getOptionValue("m")).bytes();
@@ -113,13 +107,11 @@ public class MainCli {
 		}
 		
 		// create daemon and start it
-		final MemCacheDaemon<LocalCacheElement> daemon = new MemCacheDaemon<LocalCacheElement>();
+		final MemCacheDaemon daemon = new MemCacheDaemon();
 		
-		CacheStorage<Key, LocalCacheElement> storage;
-		storage = ConcurrentLinkedHashMap.create(ConcurrentLinkedHashMap.EvictionPolicy.FIFO, max_size, maxBytes);
+		ConcurrentLinkedHashMap<Key> storage = ConcurrentLinkedHashMap.create(ConcurrentLinkedHashMap.EvictionPolicy.FIFO, max_size, maxBytes);
 		
-		daemon.setCache(new CacheImpl(storage));
-		daemon.setBinary(binary);
+		daemon.setCache(new Cache(storage));
 		daemon.setAddr(addr);
 		daemon.setIdleTime(idle);
 		daemon.setVerbose(verbose);

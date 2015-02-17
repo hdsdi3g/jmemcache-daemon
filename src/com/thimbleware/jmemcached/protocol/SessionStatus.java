@@ -26,7 +26,6 @@ public final class SessionStatus implements Serializable {
 	public int bytesNeeded;
 	
 	// the current working command
-	@SuppressWarnings("rawtypes")
 	public CommandMessage cmd;
 	
 	public SessionStatus() {
@@ -47,7 +46,6 @@ public final class SessionStatus implements Serializable {
 		return this;
 	}
 	
-	@SuppressWarnings("rawtypes")
 	public SessionStatus needMore(int size, CommandMessage cmd) {
 		this.cmd = cmd;
 		this.bytesNeeded = size;

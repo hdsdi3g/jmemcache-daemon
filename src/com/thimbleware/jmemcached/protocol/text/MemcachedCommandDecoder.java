@@ -12,7 +12,6 @@ import org.jboss.netty.handler.codec.frame.FrameDecoder;
 
 import com.thimbleware.jmemcached.CacheElement;
 import com.thimbleware.jmemcached.Key;
-import com.thimbleware.jmemcached.LocalCacheElement;
 import com.thimbleware.jmemcached.protocol.CommandMessage;
 import com.thimbleware.jmemcached.protocol.Op;
 import com.thimbleware.jmemcached.protocol.SessionStatus;
@@ -101,7 +100,6 @@ public final class MemcachedCommandDecoder extends FrameDecoder {
 					
 					buffer.skipBytes(status.bytesNeeded + MemcachedResponseEncoder.CRLF.capacity());
 					
-					@SuppressWarnings("rawtypes")
 					CommandMessage commandMessage = continueSet(channel, status, result, ctx);
 					
 					if (status.state != SessionStatus.State.WAITING_FOR_DATA) status.ready();
@@ -125,7 +123,6 @@ public final class MemcachedCommandDecoder extends FrameDecoder {
 	 * @throws com.thimbleware.jmemcached.protocol.exceptions.MalformedCommandException
 	 * @throws com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException
 	 */
-	@SuppressWarnings("unchecked")
 	private Object processLine(List<ChannelBuffer> parts, Channel channel, ChannelHandlerContext channelHandlerContext) throws UnknownCommandException, MalformedCommandException {
 		final int numParts = parts.size();
 		
@@ -139,7 +136,6 @@ public final class MemcachedCommandDecoder extends FrameDecoder {
 		}
 		
 		// Produce the initial command message, for filling in later
-		@SuppressWarnings("rawtypes")
 		CommandMessage cmd = CommandMessage.command(op);
 		
 		switch (op) {
@@ -199,7 +195,7 @@ public final class MemcachedCommandDecoder extends FrameDecoder {
 			int size = BufferUtils.atoi(parts.get(4));
 			long expire = BufferUtils.atoi(parts.get(3)) * 1000;
 			int flags = BufferUtils.atoi(parts.get(MIN_BYTES_LINE));
-			cmd.element = new LocalCacheElement(new Key(parts.get(1).slice()), flags, expire != 0 && expire < CacheElement.THIRTY_DAYS ? LocalCacheElement.Now() + expire : expire, 0L);
+			cmd.element = new CacheElement(new Key(parts.get(1).slice()), flags, expire != 0 && expire < CacheElement.THIRTY_DAYS ? CacheElement.Now() + expire : expire, 0L);
 			
 			// look for cas and "noreply" elements
 			if (numParts > 5) {
@@ -241,7 +237,6 @@ public final class MemcachedCommandDecoder extends FrameDecoder {
 	 * @param remainder the bytes picked up
 	 * @param channelHandlerContext netty channel handler context
 	 */
-	@SuppressWarnings("rawtypes")
 	private CommandMessage continueSet(Channel channel, SessionStatus state, ChannelBuffer remainder, ChannelHandlerContext channelHandlerContext) {
 		state.cmd.element.setData(remainder);
 		return state.cmd;

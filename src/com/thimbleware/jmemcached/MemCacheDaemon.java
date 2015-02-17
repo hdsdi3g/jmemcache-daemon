@@ -27,21 +27,19 @@ import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 
-import com.thimbleware.jmemcached.protocol.binary.MemcachedBinaryPipelineFactory;
 import com.thimbleware.jmemcached.protocol.text.MemcachedPipelineFactory;
 
 /**
  * The actual daemon - responsible for the binding and configuration of the network configuration.
  */
-public class MemCacheDaemon<CACHE_ELEMENT extends CacheElement> {
+public class MemCacheDaemon {
 	
 	private int frameSize = 32768 * 1024;
 	
-	private boolean binary = false;
 	private boolean verbose;
 	private int idleTime;
 	private InetSocketAddress addr;
-	private Cache<CACHE_ELEMENT> cache;
+	private Cache cache;
 	
 	private boolean running = false;
 	private ServerSocketChannelFactory channelFactory;
@@ -50,7 +48,7 @@ public class MemCacheDaemon<CACHE_ELEMENT extends CacheElement> {
 	public MemCacheDaemon() {
 	}
 	
-	public MemCacheDaemon(Cache<CACHE_ELEMENT> cache) {
+	public MemCacheDaemon(Cache cache) {
 		this.cache = cache;
 	}
 	
@@ -65,11 +63,7 @@ public class MemCacheDaemon<CACHE_ELEMENT extends CacheElement> {
 		
 		ServerBootstrap bootstrap = new ServerBootstrap(channelFactory);
 		
-		ChannelPipelineFactory pipelineFactory;
-		if (binary)
-			pipelineFactory = createMemcachedBinaryPipelineFactory(cache, verbose, idleTime, allChannels);
-		else
-			pipelineFactory = createMemcachedPipelineFactory(cache, verbose, idleTime, frameSize, allChannels);
+		ChannelPipelineFactory pipelineFactory = new MemcachedPipelineFactory(cache, verbose, idleTime, frameSize, allChannels);
 		
 		bootstrap.setPipelineFactory(pipelineFactory);
 		bootstrap.setOption("sendBufferSize", 65536);
@@ -80,16 +74,6 @@ public class MemCacheDaemon<CACHE_ELEMENT extends CacheElement> {
 		
 		System.out.println("Start listening on " + String.valueOf(addr.getHostName()) + ":" + addr.getPort());
 		running = true;
-	}
-	
-	@SuppressWarnings("rawtypes")
-	protected ChannelPipelineFactory createMemcachedBinaryPipelineFactory(Cache cache, boolean verbose, int idleTime, DefaultChannelGroup allChannels) {
-		return new MemcachedBinaryPipelineFactory(cache, verbose, idleTime, allChannels);
-	}
-	
-	@SuppressWarnings("rawtypes")
-	protected ChannelPipelineFactory createMemcachedPipelineFactory(Cache cache, boolean verbose, int idleTime, int receiveBufferSize, DefaultChannelGroup allChannels) {
-		return new MemcachedPipelineFactory(cache, verbose, idleTime, receiveBufferSize, allChannels);
 	}
 	
 	public void stop() {
@@ -124,11 +108,11 @@ public class MemCacheDaemon<CACHE_ELEMENT extends CacheElement> {
 		this.addr = addr;
 	}
 	
-	public Cache<CACHE_ELEMENT> getCache() {
+	public Cache getCache() {
 		return cache;
 	}
 	
-	public void setCache(Cache<CACHE_ELEMENT> cache) {
+	public void setCache(Cache cache) {
 		this.cache = cache;
 	}
 	
@@ -136,11 +120,4 @@ public class MemCacheDaemon<CACHE_ELEMENT extends CacheElement> {
 		return running;
 	}
 	
-	public boolean isBinary() {
-		return binary;
-	}
-	
-	public void setBinary(boolean binary) {
-		this.binary = binary;
-	}
 }

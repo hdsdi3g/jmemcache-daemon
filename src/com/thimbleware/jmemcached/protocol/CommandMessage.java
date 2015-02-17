@@ -27,14 +27,14 @@ import com.thimbleware.jmemcached.Key;
 /**
  * The payload object holding the parsed message.
  */
-public final class CommandMessage<CACHE_ELEMENT extends CacheElement> implements Serializable {
+public final class CommandMessage implements Serializable {
 	
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 	public Op op;
-	public CACHE_ELEMENT element;
+	public CacheElement element;
 	public List<Key> keys;
 	public boolean noreply;
 	public long cas_key;
@@ -62,7 +62,6 @@ public final class CommandMessage<CACHE_ELEMENT extends CacheElement> implements
 		}
 	}
 	
-	@SuppressWarnings("rawtypes")
 	public static CommandMessage command(Op operation) {
 		return new CommandMessage(operation);
 	}

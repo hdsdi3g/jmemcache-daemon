@@ -16,20 +16,16 @@ import com.thimbleware.jmemcached.protocol.SessionStatus;
 public final class MemcachedPipelineFactory implements ChannelPipelineFactory {
 	public static final Charset USASCII = Charset.forName("US-ASCII");
 	
-	@SuppressWarnings("rawtypes")
 	private Cache cache;
 	private boolean verbose;
 	private int idleTime;
 	
 	// private int frameSize;
 	private DefaultChannelGroup channelGroup;
-	@SuppressWarnings("rawtypes")
 	private final MemcachedResponseEncoder memcachedResponseEncoder = new MemcachedResponseEncoder();
 	
-	@SuppressWarnings("rawtypes")
 	private final MemcachedCommandHandler memcachedCommandHandler;
 	
-	@SuppressWarnings("rawtypes")
 	public MemcachedPipelineFactory(Cache cache, boolean verbose, int idleTime, int frameSize, DefaultChannelGroup channelGroup) {
 		this.cache = cache;
 		this.verbose = verbose;

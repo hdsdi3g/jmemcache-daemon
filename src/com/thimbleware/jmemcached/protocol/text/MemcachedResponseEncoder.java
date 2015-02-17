@@ -25,7 +25,7 @@ import com.thimbleware.jmemcached.util.BufferUtils;
 /**
  * Response encoder for the memcached text protocol. Produces strings destined for the StringEncoder
  */
-public final class MemcachedResponseEncoder<CACHE_ELEMENT extends CacheElement> extends SimpleChannelUpstreamHandler {
+public final class MemcachedResponseEncoder extends SimpleChannelUpstreamHandler {
 	
 	public static final ChannelBuffer CRLF = ChannelBuffers.copiedBuffer("\r\n", USASCII);
 	private static final ChannelBuffer SPACE = ChannelBuffers.copiedBuffer(" ", USASCII);
@@ -58,10 +58,9 @@ public final class MemcachedResponseEncoder<CACHE_ELEMENT extends CacheElement> 
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Override
 	public void messageReceived(ChannelHandlerContext channelHandlerContext, MessageEvent messageEvent) throws Exception {
-		ResponseMessage<CACHE_ELEMENT> command = (ResponseMessage<CACHE_ELEMENT>) messageEvent.getMessage();
+		ResponseMessage command = (ResponseMessage) messageEvent.getMessage();
 		
 		Op cmd = command.cmd.op;
 		

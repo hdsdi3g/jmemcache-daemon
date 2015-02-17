@@ -42,8 +42,7 @@ import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
  * The command handler produces ResponseMessages which are destined for the response encoder.
  */
 @ChannelHandler.Sharable
-@SuppressWarnings("rawtypes")
-public final class MemcachedCommandHandler<CACHE_ELEMENT extends CacheElement> extends SimpleChannelUpstreamHandler {
+public final class MemcachedCommandHandler extends SimpleChannelUpstreamHandler {
 	
 	public final AtomicInteger curr_conns = new AtomicInteger();
 	public final AtomicInteger total_conns = new AtomicInteger();
@@ -59,7 +58,7 @@ public final class MemcachedCommandHandler<CACHE_ELEMENT extends CacheElement> e
 	/**
 	 * The actual physical data storage.
 	 */
-	private final Cache<CACHE_ELEMENT> cache;
+	private final Cache cache;
 	
 	/**
 	 * The channel group for the entire daemon, used for handling global cleanup on shutdown.
@@ -74,7 +73,6 @@ public final class MemcachedCommandHandler<CACHE_ELEMENT extends CacheElement> e
 	 * @param idle how long sessions can be idle for
 	 * @param channelGroup
 	 */
-	@SuppressWarnings("unchecked")
 	public MemcachedCommandHandler(Cache cache, boolean verbosity, int idle, DefaultChannelGroup channelGroup) {
 		this.cache = cache;
 		
@@ -117,7 +115,6 @@ public final class MemcachedCommandHandler<CACHE_ELEMENT extends CacheElement> e
 	 */
 	
 	@Override
-	@SuppressWarnings("unchecked")
 	public void messageReceived(ChannelHandlerContext channelHandlerContext, MessageEvent messageEvent) throws Exception {
 		if (!(messageEvent.getMessage() instanceof CommandMessage)) {
 			// Ignore what this encoder can't encode.
@@ -125,7 +122,7 @@ public final class MemcachedCommandHandler<CACHE_ELEMENT extends CacheElement> e
 			return;
 		}
 		
-		CommandMessage<CACHE_ELEMENT> command = (CommandMessage<CACHE_ELEMENT>) messageEvent.getMessage();
+		CommandMessage command = (CommandMessage) messageEvent.getMessage();
 		Op cmd = command.op;
 		int cmdKeysSize = command.keys == null ? 0 : command.keys.size();
 		
@@ -201,11 +198,11 @@ public final class MemcachedCommandHandler<CACHE_ELEMENT extends CacheElement> e
 			}
 	}
 	
-	protected void handleNoOp(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command) {
+	protected void handleNoOp(ChannelHandlerContext channelHandlerContext, CommandMessage command) {
 		Channels.fireMessageReceived(channelHandlerContext, new ResponseMessage(command));
 	}
 	
-	protected void handleFlush(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+	protected void handleFlush(ChannelHandlerContext channelHandlerContext, CommandMessage command, Channel channel) {
 		Channels.fireMessageReceived(channelHandlerContext, new ResponseMessage(command).withFlushResponse(cache.flush_all(command.time)), channel.getRemoteAddress());
 	}
 	
@@ -218,13 +215,12 @@ public final class MemcachedCommandHandler<CACHE_ELEMENT extends CacheElement> e
 		channel.disconnect();
 	}
 	
-	protected void handleVersion(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+	protected void handleVersion(ChannelHandlerContext channelHandlerContext, CommandMessage command, Channel channel) {
 		ResponseMessage responseMessage = new ResponseMessage(command);
 		Channels.fireMessageReceived(channelHandlerContext, responseMessage, channel.getRemoteAddress());
 	}
 	
-	@SuppressWarnings("unchecked")
-	protected void handleStats(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command, int cmdKeysSize, Channel channel) {
+	protected void handleStats(ChannelHandlerContext channelHandlerContext, CommandMessage command, int cmdKeysSize, Channel channel) {
 		String option = "";
 		if (cmdKeysSize > 0) {
 			option = command.keys.get(0).bytes.toString();
@@ -232,62 +228,62 @@ public final class MemcachedCommandHandler<CACHE_ELEMENT extends CacheElement> e
 		Channels.fireMessageReceived(channelHandlerContext, new ResponseMessage(command).withStatResponse(cache.stat(option)), channel.getRemoteAddress());
 	}
 	
-	protected void handleDelete(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+	protected void handleDelete(ChannelHandlerContext channelHandlerContext, CommandMessage command, Channel channel) {
 		Cache.DeleteResponse dr = cache.delete(command.keys.get(0), command.time);
 		Channels.fireMessageReceived(channelHandlerContext, new ResponseMessage(command).withDeleteResponse(dr), channel.getRemoteAddress());
 	}
 	
-	protected void handleDecr(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+	protected void handleDecr(ChannelHandlerContext channelHandlerContext, CommandMessage command, Channel channel) {
 		Integer incrDecrResp = cache.get_add(command.keys.get(0), -1 * command.incrAmount);
 		Channels.fireMessageReceived(channelHandlerContext, new ResponseMessage(command).withIncrDecrResponse(incrDecrResp), channel.getRemoteAddress());
 	}
 	
-	protected void handleIncr(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+	protected void handleIncr(ChannelHandlerContext channelHandlerContext, CommandMessage command, Channel channel) {
 		Integer incrDecrResp = cache.get_add(command.keys.get(0), command.incrAmount); // T O D O support default value and expiry!!
 		Channels.fireMessageReceived(channelHandlerContext, new ResponseMessage(command).withIncrDecrResponse(incrDecrResp), channel.getRemoteAddress());
 	}
 	
-	protected void handlePrepend(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+	protected void handlePrepend(ChannelHandlerContext channelHandlerContext, CommandMessage command, Channel channel) {
 		Cache.StoreResponse ret;
 		ret = cache.prepend(command.element);
 		Channels.fireMessageReceived(channelHandlerContext, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
 	}
 	
-	protected void handleAppend(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+	protected void handleAppend(ChannelHandlerContext channelHandlerContext, CommandMessage command, Channel channel) {
 		Cache.StoreResponse ret;
 		ret = cache.append(command.element);
 		Channels.fireMessageReceived(channelHandlerContext, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
 	}
 	
-	protected void handleReplace(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+	protected void handleReplace(ChannelHandlerContext channelHandlerContext, CommandMessage command, Channel channel) {
 		Cache.StoreResponse ret;
 		ret = cache.replace(command.element);
 		Channels.fireMessageReceived(channelHandlerContext, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
 	}
 	
-	protected void handleAdd(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+	protected void handleAdd(ChannelHandlerContext channelHandlerContext, CommandMessage command, Channel channel) {
 		Cache.StoreResponse ret;
 		ret = cache.add(command.element);
 		Channels.fireMessageReceived(channelHandlerContext, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
 	}
 	
-	protected void handleCas(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+	protected void handleCas(ChannelHandlerContext channelHandlerContext, CommandMessage command, Channel channel) {
 		Cache.StoreResponse ret;
 		ret = cache.cas(command.cas_key, command.element);
 		Channels.fireMessageReceived(channelHandlerContext, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
 	}
 	
-	protected void handleSet(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+	protected void handleSet(ChannelHandlerContext channelHandlerContext, CommandMessage command, Channel channel) {
 		Cache.StoreResponse ret;
 		ret = cache.set(command.element);
 		Channels.fireMessageReceived(channelHandlerContext, new ResponseMessage(command).withResponse(ret), channel.getRemoteAddress());
 	}
 	
-	protected void handleGets(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
+	protected void handleGets(ChannelHandlerContext channelHandlerContext, CommandMessage command, Channel channel) {
 		Key[] keys = new Key[command.keys.size()];
 		keys = command.keys.toArray(keys);
-		CACHE_ELEMENT[] results = get(keys);
-		ResponseMessage<CACHE_ELEMENT> resp = new ResponseMessage<CACHE_ELEMENT>(command).withElements(results);
+		CacheElement[] results = get(keys);
+		ResponseMessage resp = new ResponseMessage(command).withElements(results);
 		Channels.fireMessageReceived(channelHandlerContext, resp, channel.getRemoteAddress());
 	}
 	
@@ -296,7 +292,7 @@ public final class MemcachedCommandHandler<CACHE_ELEMENT extends CacheElement> e
 	 * @param keys the key for the element to lookup
 	 * @return the element, or 'null' in case of cache miss.
 	 */
-	private CACHE_ELEMENT[] get(Key... keys) {
+	private CacheElement[] get(Key... keys) {
 		return cache.get(keys);
 	}
 	
