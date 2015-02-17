@@ -26,8 +26,6 @@ import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.ServerSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.thimbleware.jmemcached.protocol.binary.MemcachedBinaryPipelineFactory;
 import com.thimbleware.jmemcached.protocol.text.MemcachedPipelineFactory;
@@ -36,8 +34,6 @@ import com.thimbleware.jmemcached.protocol.text.MemcachedPipelineFactory;
  * The actual daemon - responsible for the binding and configuration of the network configuration.
  */
 public class MemCacheDaemon<CACHE_ELEMENT extends CacheElement> {
-	
-	final Logger log = LoggerFactory.getLogger(MemCacheDaemon.class);
 	
 	public static String memcachedVersion = "0.9";
 	
@@ -84,8 +80,7 @@ public class MemCacheDaemon<CACHE_ELEMENT extends CacheElement> {
 		Channel serverChannel = bootstrap.bind(addr);
 		allChannels.add(serverChannel);
 		
-		log.info("Listening on " + String.valueOf(addr.getHostName()) + ":" + addr.getPort());
-		
+		System.out.println("Start listening on " + String.valueOf(addr.getHostName()) + ":" + addr.getPort());
 		running = true;
 	}
 	
@@ -100,14 +95,14 @@ public class MemCacheDaemon<CACHE_ELEMENT extends CacheElement> {
 	}
 	
 	public void stop() {
-		log.info("terminating daemon; closing all channels");
+		System.out.println("terminating daemon; closing all channels");
 		
 		ChannelGroupFuture future = allChannels.close();
 		future.awaitUninterruptibly();
 		if (!future.isCompleteSuccess()) {
 			throw new RuntimeException("failure to complete closing all network channels");
 		}
-		log.info("channels closed, freeing cache storage");
+		System.out.println("channels closed, freeing cache storage");
 		try {
 			cache.close();
 		} catch (IOException e) {
@@ -116,7 +111,7 @@ public class MemCacheDaemon<CACHE_ELEMENT extends CacheElement> {
 		channelFactory.releaseExternalResources();
 		
 		running = false;
-		log.info("successfully shut down");
+		System.out.println("successfully shut down");
 	}
 	
 	public void setVerbose(boolean verbose) {

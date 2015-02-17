@@ -10,3 +10,4 @@ catalog.xml
 .project
 /bin/
 org.eclipse.jdt.core.prefs
+org.eclipse.ltk.core.refactoring.prefs

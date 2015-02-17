@@ -13,8 +13,6 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.thimbleware.jmemcached.CacheElement;
 import com.thimbleware.jmemcached.protocol.Op;
@@ -29,8 +27,6 @@ import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
 public class MemcachedBinaryResponseEncoder<CACHE_ELEMENT extends CacheElement> extends SimpleChannelUpstreamHandler {
 	
 	private ConcurrentHashMap<Integer, ChannelBuffer> corkedBuffers = new ConcurrentHashMap<Integer, ChannelBuffer>();
-	
-	final Logger logger = LoggerFactory.getLogger(MemcachedBinaryResponseEncoder.class);
 	
 	public static enum ResponseCode {
 		OK(0x0000), KEYNF(0x0001), KEYEXISTS(0x0002), TOOLARGE(0x0003), INVARG(0x0004), NOT_STORED(0x0005), UNKNOWN(0x0081), OOM(0x00082);
@@ -113,7 +109,7 @@ public class MemcachedBinaryResponseEncoder<CACHE_ELEMENT extends CacheElement> 
 		} catch (UnknownCommandException unknownCommand) {
 			if (ctx.getChannel().isOpen()) ctx.getChannel().write(constructHeader(MemcachedBinaryCommandDecoder.BinaryOp.Noop, null, null, null, (short) 0x0081, 0, 0));
 		} catch (Throwable err) {
-			logger.error("error", err);
+			err.printStackTrace();
 			if (ctx.getChannel().isOpen()) ctx.getChannel().close();
 		}
 	}

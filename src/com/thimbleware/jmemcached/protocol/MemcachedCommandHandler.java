@@ -25,8 +25,6 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.thimbleware.jmemcached.Cache;
 import com.thimbleware.jmemcached.CacheElement;
@@ -46,8 +44,6 @@ import com.thimbleware.jmemcached.protocol.exceptions.UnknownCommandException;
 @ChannelHandler.Sharable
 @SuppressWarnings("rawtypes")
 public final class MemcachedCommandHandler<CACHE_ELEMENT extends CacheElement> extends SimpleChannelUpstreamHandler {
-	
-	final Logger logger = LoggerFactory.getLogger(MemcachedCommandHandler.class);
 	
 	public final AtomicInteger curr_conns = new AtomicInteger();
 	public final AtomicInteger total_conns = new AtomicInteger();
@@ -149,7 +145,7 @@ public final class MemcachedCommandHandler<CACHE_ELEMENT extends CacheElement> e
 			for (int i = 0; i < cmdKeysSize; i++) {
 				log.append(" ").append(command.keys.get(i));
 			}
-			logger.info(log.toString());
+			System.out.println(log.toString());
 		}
 		
 		Channel channel = messageEvent.getChannel();

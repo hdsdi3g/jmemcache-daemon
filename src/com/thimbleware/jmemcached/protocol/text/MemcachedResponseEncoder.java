@@ -14,8 +14,6 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.thimbleware.jmemcached.Cache;
 import com.thimbleware.jmemcached.CacheElement;
@@ -28,8 +26,6 @@ import com.thimbleware.jmemcached.util.BufferUtils;
  * Response encoder for the memcached text protocol. Produces strings destined for the StringEncoder
  */
 public final class MemcachedResponseEncoder<CACHE_ELEMENT extends CacheElement> extends SimpleChannelUpstreamHandler {
-	
-	final Logger logger = LoggerFactory.getLogger(MemcachedResponseEncoder.class);
 	
 	public static final ChannelBuffer CRLF = ChannelBuffers.copiedBuffer("\r\n", USASCII);
 	private static final ChannelBuffer SPACE = ChannelBuffers.copiedBuffer(" ", USASCII);
@@ -57,7 +53,7 @@ public final class MemcachedResponseEncoder<CACHE_ELEMENT extends CacheElement> 
 		} catch (ClientException ce) {
 			if (ctx.getChannel().isOpen()) ctx.getChannel().write(CLIENT_ERROR);
 		} catch (Throwable tr) {
-			logger.error("error", tr);
+			tr.printStackTrace();
 			if (ctx.getChannel().isOpen()) ctx.getChannel().write(ERROR);
 		}
 	}
@@ -148,8 +144,7 @@ public final class MemcachedResponseEncoder<CACHE_ELEMENT extends CacheElement> 
 			break;
 		default:
 			Channels.write(channel, ERROR.duplicate());
-			logger.error("error; unrecognized command: " + cmd);
-			
+			System.err.println("error; unrecognized command: " + cmd);
 		}
 		
 	}
