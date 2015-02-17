@@ -75,7 +75,6 @@ public abstract class AbstractCache<CACHE_ELEMENT extends CacheElement> implemen
 		Map<String, Set<String>> result = new HashMap<String, Set<String>>();
 		
 		// stats we know
-		multiSet(result, "version", MemCacheDaemon.memcachedVersion);
 		multiSet(result, "cmd_gets", valueOf(getGetCmds()));
 		multiSet(result, "cmd_sets", valueOf(getSetCmds()));
 		multiSet(result, "get_hits", valueOf(getGetHits()));

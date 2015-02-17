@@ -18,7 +18,6 @@ public final class MemcachedPipelineFactory implements ChannelPipelineFactory {
 	
 	@SuppressWarnings("rawtypes")
 	private Cache cache;
-	private String version;
 	private boolean verbose;
 	private int idleTime;
 	
@@ -31,14 +30,13 @@ public final class MemcachedPipelineFactory implements ChannelPipelineFactory {
 	private final MemcachedCommandHandler memcachedCommandHandler;
 	
 	@SuppressWarnings("rawtypes")
-	public MemcachedPipelineFactory(Cache cache, String version, boolean verbose, int idleTime, int frameSize, DefaultChannelGroup channelGroup) {
+	public MemcachedPipelineFactory(Cache cache, boolean verbose, int idleTime, int frameSize, DefaultChannelGroup channelGroup) {
 		this.cache = cache;
-		this.version = version;
 		this.verbose = verbose;
 		this.idleTime = idleTime;
 		// this.frameSize = frameSize;
 		this.channelGroup = channelGroup;
-		memcachedCommandHandler = new MemcachedCommandHandler(this.cache, this.version, this.verbose, this.idleTime, this.channelGroup);
+		memcachedCommandHandler = new MemcachedCommandHandler(this.cache, this.verbose, this.idleTime, this.channelGroup);
 	}
 	
 	@Override

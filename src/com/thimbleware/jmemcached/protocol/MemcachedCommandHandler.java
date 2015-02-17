@@ -53,8 +53,6 @@ public final class MemcachedCommandHandler<CACHE_ELEMENT extends CacheElement> e
 	 * In order for these values to work properly, the handler _must_ be declared with a ChannelPipelineCoverage
 	 * of "all".
 	 */
-	public final String version;
-	
 	public final int idle_limit;
 	public final boolean verbose;
 	
@@ -77,10 +75,9 @@ public final class MemcachedCommandHandler<CACHE_ELEMENT extends CacheElement> e
 	 * @param channelGroup
 	 */
 	@SuppressWarnings("unchecked")
-	public MemcachedCommandHandler(Cache cache, String memcachedVersion, boolean verbosity, int idle, DefaultChannelGroup channelGroup) {
+	public MemcachedCommandHandler(Cache cache, boolean verbosity, int idle, DefaultChannelGroup channelGroup) {
 		this.cache = cache;
 		
-		version = memcachedVersion;
 		verbose = verbosity;
 		idle_limit = idle;
 		this.channelGroup = channelGroup;
@@ -221,10 +218,8 @@ public final class MemcachedCommandHandler<CACHE_ELEMENT extends CacheElement> e
 		channel.disconnect();
 	}
 	
-	@SuppressWarnings("unchecked")
 	protected void handleVersion(ChannelHandlerContext channelHandlerContext, CommandMessage<CACHE_ELEMENT> command, Channel channel) {
 		ResponseMessage responseMessage = new ResponseMessage(command);
-		responseMessage.version = version;
 		Channels.fireMessageReceived(channelHandlerContext, responseMessage, channel.getRemoteAddress());
 	}
 	

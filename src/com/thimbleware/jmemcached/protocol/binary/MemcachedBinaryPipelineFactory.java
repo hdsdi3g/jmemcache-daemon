@@ -17,8 +17,8 @@ public class MemcachedBinaryPipelineFactory implements ChannelPipelineFactory {
 	private final MemcachedBinaryResponseEncoder memcachedBinaryResponseEncoder = new MemcachedBinaryResponseEncoder();
 	
 	@SuppressWarnings("rawtypes")
-	public MemcachedBinaryPipelineFactory(Cache cache, String version, boolean verbose, int idleTime, DefaultChannelGroup channelGroup) {
-		memcachedCommandHandler = new MemcachedCommandHandler(cache, version, verbose, idleTime, channelGroup);
+	public MemcachedBinaryPipelineFactory(Cache cache, boolean verbose, int idleTime, DefaultChannelGroup channelGroup) {
+		memcachedCommandHandler = new MemcachedCommandHandler(cache, verbose, idleTime, channelGroup);
 	}
 	
 	@Override

@@ -12,9 +12,6 @@ import com.thimbleware.jmemcached.CacheElement;
  */
 public final class ResponseMessage<CACHE_ELEMENT extends CacheElement> implements Serializable {
 	
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -26,7 +23,6 @@ public final class ResponseMessage<CACHE_ELEMENT extends CacheElement> implement
 	public CACHE_ELEMENT[] elements;
 	public Cache.StoreResponse response;
 	public Map<String, Set<String>> stats;
-	public String version;
 	public Cache.DeleteResponse deleteResponse;
 	public Integer incrDecrResponse;
 	public boolean flushSuccess;

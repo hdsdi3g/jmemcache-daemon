@@ -35,8 +35,6 @@ import com.thimbleware.jmemcached.protocol.text.MemcachedPipelineFactory;
  */
 public class MemCacheDaemon<CACHE_ELEMENT extends CacheElement> {
 	
-	public static String memcachedVersion = "0.9";
-	
 	private int frameSize = 32768 * 1024;
 	
 	private boolean binary = false;
@@ -69,9 +67,9 @@ public class MemCacheDaemon<CACHE_ELEMENT extends CacheElement> {
 		
 		ChannelPipelineFactory pipelineFactory;
 		if (binary)
-			pipelineFactory = createMemcachedBinaryPipelineFactory(cache, memcachedVersion, verbose, idleTime, allChannels);
+			pipelineFactory = createMemcachedBinaryPipelineFactory(cache, verbose, idleTime, allChannels);
 		else
-			pipelineFactory = createMemcachedPipelineFactory(cache, memcachedVersion, verbose, idleTime, frameSize, allChannels);
+			pipelineFactory = createMemcachedPipelineFactory(cache, verbose, idleTime, frameSize, allChannels);
 		
 		bootstrap.setPipelineFactory(pipelineFactory);
 		bootstrap.setOption("sendBufferSize", 65536);
@@ -85,13 +83,13 @@ public class MemCacheDaemon<CACHE_ELEMENT extends CacheElement> {
 	}
 	
 	@SuppressWarnings("rawtypes")
-	protected ChannelPipelineFactory createMemcachedBinaryPipelineFactory(Cache cache, String memcachedVersion, boolean verbose, int idleTime, DefaultChannelGroup allChannels) {
-		return new MemcachedBinaryPipelineFactory(cache, memcachedVersion, verbose, idleTime, allChannels);
+	protected ChannelPipelineFactory createMemcachedBinaryPipelineFactory(Cache cache, boolean verbose, int idleTime, DefaultChannelGroup allChannels) {
+		return new MemcachedBinaryPipelineFactory(cache, verbose, idleTime, allChannels);
 	}
 	
 	@SuppressWarnings("rawtypes")
-	protected ChannelPipelineFactory createMemcachedPipelineFactory(Cache cache, String memcachedVersion, boolean verbose, int idleTime, int receiveBufferSize, DefaultChannelGroup allChannels) {
-		return new MemcachedPipelineFactory(cache, memcachedVersion, verbose, idleTime, receiveBufferSize, allChannels);
+	protected ChannelPipelineFactory createMemcachedPipelineFactory(Cache cache, boolean verbose, int idleTime, int receiveBufferSize, DefaultChannelGroup allChannels) {
+		return new MemcachedPipelineFactory(cache, verbose, idleTime, receiveBufferSize, allChannels);
 	}
 	
 	public void stop() {

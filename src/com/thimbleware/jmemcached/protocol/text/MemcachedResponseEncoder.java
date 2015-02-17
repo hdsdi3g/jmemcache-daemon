@@ -127,7 +127,7 @@ public final class MemcachedResponseEncoder<CACHE_ELEMENT extends CacheElement> 
 			
 			break;
 		case VERSION:
-			Channels.write(channel, ChannelBuffers.copiedBuffer("VERSION " + command.version + "\r\n", USASCII));
+			Channels.write(channel, ChannelBuffers.copiedBuffer("VERSION 0.9\r\n", USASCII));
 			break;
 		case QUIT:
 			Channels.disconnect(channel);
