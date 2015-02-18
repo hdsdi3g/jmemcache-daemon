@@ -194,28 +194,6 @@ public final class CacheElement implements Serializable {
 		this.data = data;
 	}
 	
-	public static CacheElement readFromBuffer(ChannelBuffer in) {
-		/*int bufferSize =*/in.readInt();
-		long expiry = in.readLong();
-		int keyLength = in.readInt();
-		ChannelBuffer key = in.slice(in.readerIndex(), keyLength);
-		in.skipBytes(keyLength);
-		CacheElement CacheElement = new CacheElement(new Key(key));
-		
-		CacheElement.expire = expiry;
-		CacheElement.flags = in.readInt();
-		
-		int dataLength = in.readInt();
-		CacheElement.data = in.slice(in.readerIndex(), dataLength);
-		in.skipBytes(dataLength);
-		
-		CacheElement.casUnique = in.readInt();
-		CacheElement.blocked = in.readByte() == 1;
-		CacheElement.blockedUntil = in.readLong();
-		
-		return CacheElement;
-	}
-	
 	public int bufferSize() {
 		return 4 + 8 + 4 + key.bytes.capacity() + 4 + 4 + 4 + data.capacity() + 8 + 1 + 8;
 	}

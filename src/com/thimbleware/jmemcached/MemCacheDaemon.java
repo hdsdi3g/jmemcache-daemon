@@ -72,7 +72,7 @@ public class MemCacheDaemon {
 		Channel serverChannel = bootstrap.bind(addr);
 		allChannels.add(serverChannel);
 		
-		System.out.println("Start listening on " + String.valueOf(addr.getHostName()) + ":" + addr.getPort());
+		System.out.println("# Start listening on " + String.valueOf(addr.getAddress().getHostAddress()) + ":" + addr.getPort());
 		
 		running = true;
 	}

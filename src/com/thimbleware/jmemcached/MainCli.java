@@ -13,8 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *  
- *  Forked by hdsdi3g (https://github.com/hdsdi3g) http://hd3g.tv
- *  
+ *  Fork copyright 2015 by hdsdi3g for http://hd3g.tv/
  */
 package com.thimbleware.jmemcached;
 
@@ -24,11 +23,16 @@ import com.thimbleware.jmemcached.storage.hash.ConcurrentLinkedHashMap;
 
 /**
  * Command line interface to the Java memcache daemon.
- * Arguments in general parallel those of the C implementation.
  */
 public class MainCli {
 	
 	public static void main(String[] args) throws Exception {
+		System.out.println("# jmemcache-daemon");
+		System.out.println("# Copyright 2008 ThimbleWare Inc.");
+		System.out.println("# Fork copyright 2015 by hdsdi3g for http://hd3g.tv/");
+		System.out.println("# https://github.com/hdsdi3g/jmemcache-daemon");
+		System.out.println("#");
+		
 		int port = Integer.parseInt(System.getProperty("port", "11211"));
 		InetSocketAddress addr = new InetSocketAddress(System.getProperty("addr", "127.0.0.1"), port);
 		int max_size = Integer.parseInt(System.getProperty("maxsize", "1000000"));
@@ -37,17 +41,20 @@ public class MainCli {
 		int max_bytes = Integer.parseInt(System.getProperty("maxbytes", String.valueOf(Runtime.getRuntime().maxMemory()))); // Setting max memory size to JVM limit
 		
 		if (max_bytes > Runtime.getRuntime().maxMemory()) {
-			System.out.println("ERROR : JVM heap size is not big enough. use '-Xmx" + String.valueOf(max_bytes / 1024000) + "m' java argument before the '-jar' option.");
+			System.err.println("ERROR : JVM heap size is not big enough. use '-Xmx" + String.valueOf(max_bytes / 1024000) + "m' java argument before the '-jar' option.");
 			System.exit(1);
 		}
 		
 		if (verbose) {
-			System.out.println("Set idle=\t" + idle);
-			System.out.println("Set max_size=\t" + max_size);
-			System.out.println("Set max_bytes=\t" + max_bytes);
-			System.out.println("VM maxMemory=\t" + Runtime.getRuntime().maxMemory());
-			System.out.println("VM freeMemory=\t" + Runtime.getRuntime().freeMemory());
-			System.out.println("VM totalMemory=\t" + Runtime.getRuntime().totalMemory());
+			if (idle > 0) {
+				System.out.println("# Set idle=       " + idle);
+			}
+			System.out.println("# Set max_size=   " + max_size);
+			System.out.println("# Set max_bytes=  " + max_bytes);
+			System.out.println("# VM maxMemory=   " + Runtime.getRuntime().maxMemory());
+			System.out.println("# VM freeMemory=  " + Runtime.getRuntime().freeMemory());
+			System.out.println("# VM totalMemory= " + Runtime.getRuntime().totalMemory());
+			System.out.println("#");
 		}
 		
 		final MemCacheDaemon daemon = new MemCacheDaemon();

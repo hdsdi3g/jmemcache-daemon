@@ -1,6 +1,7 @@
 package com.thimbleware.jmemcached;
 
 import org.jboss.netty.buffer.ChannelBuffer;
+import org.jboss.netty.buffer.SlicedChannelBuffer;
 
 /**
  * Represents a given key for lookup in the cache.
@@ -34,4 +35,12 @@ public class Key {
 		return hashCode;
 	}
 	
+	public String toString() {
+		if ((bytes instanceof SlicedChannelBuffer) == false) {
+			return "(invalid_key)";
+		}
+		byte[] buf = new byte[bytes.capacity()];
+		bytes.getBytes(0, buf);
+		return new String(buf);
+	}
 }

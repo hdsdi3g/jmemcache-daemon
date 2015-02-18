@@ -15,6 +15,9 @@
  */
 package com.thimbleware.jmemcached.protocol;
 
+import java.net.InetSocketAddress;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.netty.channel.Channel;
@@ -106,6 +109,8 @@ public final class MemcachedCommandHandler extends SimpleChannelUpstreamHandler 
 		channelGroup.remove(channelHandlerContext.getChannel());
 	}
 	
+	private static final SimpleDateFormat date_format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss,SSS");
+	
 	/**
 	 * The actual meat of the matter. Turn CommandMessages into executions against the physical cache, and then
 	 * pass on the downstream messages.
@@ -113,7 +118,6 @@ public final class MemcachedCommandHandler extends SimpleChannelUpstreamHandler 
 	 * @param messageEvent
 	 * @throws Exception
 	 */
-	
 	@Override
 	public void messageReceived(ChannelHandlerContext channelHandlerContext, MessageEvent messageEvent) throws Exception {
 		if (!(messageEvent.getMessage() instanceof CommandMessage)) {
@@ -123,30 +127,44 @@ public final class MemcachedCommandHandler extends SimpleChannelUpstreamHandler 
 		}
 		
 		CommandMessage command = (CommandMessage) messageEvent.getMessage();
-		Op cmd = command.op;
+		Op op = command.op;
 		int cmdKeysSize = command.keys == null ? 0 : command.keys.size();
 		
 		// first process any messages in the delete queue
 		cache.asyncEventPing();
 		
-		// now do the real work
 		if (this.verbose) {
 			StringBuilder log = new StringBuilder();
-			log.append(cmd);
+			Channel channel = channelHandlerContext.getChannel();
+			InetSocketAddress addr = (InetSocketAddress) channel.getRemoteAddress();
+			
+			log.append(date_format.format(new Date()));
+			log.append(" [");
+			log.append(addr.getAddress().getHostAddress());
+			log.append("] ");
+			log.append(op);
+			
 			if (command.element != null) {
-				log.append(" ").append(command.element.getKey());
+				log.append(" \"");
+				log.append(command.element.getKey());
+				log.append("\" ");
+				log.append(command.element.size());
+				log.append("b ttl:");
+				log.append(command.element.getExpire() / 1000 / 60);
 			}
 			for (int i = 0; i < cmdKeysSize; i++) {
-				log.append(" ").append(command.keys.get(i));
+				log.append(" \"");
+				log.append(command.keys.get(i));
+				log.append("\"");
 			}
 			System.out.println(log.toString());
 		}
 		
 		Channel channel = messageEvent.getChannel();
-		if (cmd == null)
+		if (op == null)
 			handleNoOp(channelHandlerContext, command);
 		else
-			switch (cmd) {
+			switch (op) {
 			case GET:
 			case GETS:
 				handleGets(channelHandlerContext, command, channel);
