@@ -32,6 +32,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.thimbleware.jmemcached.CacheElement;
+import com.thimbleware.jmemcached.Key;
 
 /**
  * A {@link ConcurrentMap} with a doubly-linked list running through its entries.
@@ -51,58 +52,25 @@ import com.thimbleware.jmemcached.CacheElement;
  * @author <a href="mailto:ben.manes@reardencommerce.com">Ben Manes</a>
  * @see http://code.google.com/p/concurrentlinkedhashmap/
  */
-public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElement> implements Serializable, ConcurrentMap<K, CacheElement> {
-	private static final EvictionListener<?> nullListener = new EvictionListener<Object>() {
+public final class ConcurrentLinkedHashMap extends AbstractMap<Key, CacheElement> implements Serializable, ConcurrentMap<Key, CacheElement> {
+	private static final EvictionListener nullListener = new EvictionListener() {
 		
 		@Override
-		public void onEviction(Object key, com.thimbleware.jmemcached.CacheElement value) {
+		public void onEviction(Key key, com.thimbleware.jmemcached.CacheElement value) {
 		}
 	};
 	private static final long serialVersionUID = 8350170357874293408L;
-	final ConcurrentMap<K, Node<K>> data;
-	final EvictionListener<K> listener;
+	final ConcurrentMap<Key, Node> data;
+	final EvictionListener listener;
 	final AtomicInteger capacity;
 	final EvictionPolicy policy;
 	final AtomicInteger length;
-	final Node<K> sentinel;
+	final Node sentinel;
 	final Lock lock;
 	final AtomicLong memoryCapacity;
 	final AtomicLong memoryUsed;
 	
 	/**
-	 * Creates a map with the specified eviction policy, maximum capacity, and at the default concurrency level.
-	 * @param policy The eviction policy to apply when the size exceeds the maximum capacity.
-	 * @param maximumCapacity The maximum capacity to coerces to. The size may exceed it temporarily.
-	 */
-	@SuppressWarnings("unchecked")
-	public static <K> ConcurrentLinkedHashMap<K> create(EvictionPolicy policy, int maximumCapacity, long maximumMemoryCapacity) {
-		return create(policy, maximumCapacity, maximumMemoryCapacity, 16, (EvictionListener<K>) nullListener);
-	}
-	
-	/**
-	 * Creates a map with the specified eviction policy, maximum capacity, eviction listener, and at the
-	 * default concurrency level.
-	 * @param policy The eviction policy to apply when the size exceeds the maximum capacity.
-	 * @param maximumCapacity The maximum capacity to coerces to. The size may exceed it temporarily.
-	 * @param listener The listener registered for notification when an entry is evicted.
-	 */
-	public static <K> ConcurrentLinkedHashMap<K> create(EvictionPolicy policy, int maximumCapacity, long maximumMemoryCapacity, EvictionListener<K> listener) {
-		return create(policy, maximumCapacity, maximumMemoryCapacity, 16, listener);
-	}
-	
-	/**
-	 * Creates a map with the specified eviction policy, maximum capacity, and concurrency level.
-	 * @param policy The eviction policy to apply when the size exceeds the maximum capacity.
-	 * @param maximumCapacity The maximum capacity to coerces to. The size may exceed it temporarily.
-	 * @param concurrencyLevel The estimated number of concurrently updating threads. The implementation
-	 *        performs internal sizing to try to accommodate this many threads.
-	 */
-	@SuppressWarnings("unchecked")
-	public static <K> ConcurrentLinkedHashMap<K> create(EvictionPolicy policy, int maximumCapacity, long maximumMemoryCapacity, int concurrencyLevel) {
-		return create(policy, maximumCapacity, maximumMemoryCapacity, concurrencyLevel, (EvictionListener<K>) nullListener);
-	}
-	
-	/**
 	 * Creates a map with the specified eviction policy, maximum capacity, eviction listener, and concurrency level.
 	 * @param policy The eviction policy to apply when the size exceeds the maximum capacity.
 	 * @param maximumCapacity The maximum capacity to coerces to. The size may exceed it temporarily.
@@ -110,29 +78,17 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	 *        performs internal sizing to try to accommodate this many threads.
 	 * @param listener The listener registered for notification when an entry is evicted.
 	 */
-	public static <K> ConcurrentLinkedHashMap<K> create(EvictionPolicy policy, int maximumCapacity, long maximumMemoryCapacity, int concurrencyLevel, EvictionListener<K> listener) {
-		return new ConcurrentLinkedHashMap<K>(policy, maximumCapacity, maximumMemoryCapacity, concurrencyLevel, listener);
-	}
-	
-	/**
-	 * Creates a map with the specified eviction policy, maximum capacity, eviction listener, and concurrency level.
-	 * @param policy The eviction policy to apply when the size exceeds the maximum capacity.
-	 * @param maximumCapacity The maximum capacity to coerces to. The size may exceed it temporarily.
-	 * @param concurrencyLevel The estimated number of concurrently updating threads. The implementation
-	 *        performs internal sizing to try to accommodate this many threads.
-	 * @param listener The listener registered for notification when an entry is evicted.
-	 */
-	private ConcurrentLinkedHashMap(EvictionPolicy policy, int maximumCapacity, long maximumMemoryCapacity, int concurrencyLevel, EvictionListener<K> listener) {
-		if ((policy == null) || (maximumCapacity < 0) || (concurrencyLevel <= 0) || (listener == null)) {
+	public ConcurrentLinkedHashMap(int maximumCapacity, long maximumMemoryCapacity) {
+		if (maximumCapacity < 0) {
 			throw new IllegalArgumentException();
 		}
-		this.data = new ConcurrentHashMap<K, Node<K>>(maximumCapacity, 0.75f, concurrencyLevel);
+		this.data = new ConcurrentHashMap<Key, Node>(maximumCapacity, 0.75f, 16);
 		this.capacity = new AtomicInteger(maximumCapacity);
 		this.length = new AtomicInteger();
-		this.listener = listener;
-		this.policy = policy;
+		this.listener = nullListener;
+		this.policy = ConcurrentLinkedHashMap.EvictionPolicy.FIFO;
 		this.lock = new ReentrantLock();
-		this.sentinel = new Node<K>(lock);
+		this.sentinel = new Node(lock);
 		this.memoryUsed = new AtomicLong(0);
 		this.memoryCapacity = new AtomicLong(maximumMemoryCapacity);
 	}
@@ -204,7 +160,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	 */
 	@Override
 	public void clear() {
-		for (K key : keySet()) {
+		for (Key key : keySet()) {
 			remove(key);
 		}
 	}
@@ -225,7 +181,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 		if (value == null) {
 			throw new IllegalArgumentException();
 		}
-		return data.containsValue(new Node<Object>(null, (CacheElement) value, null, lock));
+		return data.containsValue(new Node(null, (CacheElement) value, null, lock));
 	}
 	
 	/**
@@ -233,7 +189,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	 */
 	private boolean evict() {
 		while (isOverflow()) {
-			Node<K> node = sentinel.getNext();
+			Node node = sentinel.getNext();
 			if (node == sentinel) {
 				return false;
 			} else if (policy.onEvict(this, node)) {
@@ -255,7 +211,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	 */
 	@Override
 	public CacheElement get(Object key) {
-		Node<K> node = data.get(key);
+		Node node = data.get(key);
 		if (node != null) {
 			policy.onAccess(this, node);
 			return node.getValue();
@@ -267,11 +223,11 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	 * {@inheritDoc}
 	 */
 	@Override
-	public CacheElement put(K key, CacheElement value) {
+	public CacheElement put(Key key, CacheElement value) {
 		if (value == null) {
 			throw new IllegalArgumentException();
 		}
-		Node<K> old = putIfAbsent(new Node<K>(key, value, sentinel, lock));
+		Node old = putIfAbsent(new Node(key, value, sentinel, lock));
 		
 		memoryUsed.addAndGet(value.size());
 		if (old == null) {
@@ -286,11 +242,11 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	 * {@inheritDoc}
 	 */
 	@Override
-	public CacheElement putIfAbsent(K key, CacheElement value) {
+	public CacheElement putIfAbsent(Key key, CacheElement value) {
 		if (value == null) {
 			throw new IllegalArgumentException();
 		}
-		Node<K> old = putIfAbsent(new Node<K>(key, value, sentinel, lock));
+		Node old = putIfAbsent(new Node(key, value, sentinel, lock));
 		if (old == null) {
 			memoryUsed.addAndGet(value.size());
 			
@@ -304,8 +260,8 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	 * @param node An unlinked node to add.
 	 * @return The previous value in the data store.
 	 */
-	private Node<K> putIfAbsent(Node<K> node) {
-		Node<K> old = data.putIfAbsent(node.getKey(), node);
+	private Node putIfAbsent(Node node) {
+		Node old = data.putIfAbsent(node.getKey(), node);
 		if (old == null) {
 			length.incrementAndGet();
 			node.appendToTail();
@@ -321,7 +277,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	 */
 	@Override
 	public CacheElement remove(Object key) {
-		Node<K> node = data.remove(key);
+		Node node = data.remove(key);
 		if (node == null) {
 			return null;
 		}
@@ -337,7 +293,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	 */
 	@Override
 	public boolean remove(Object key, Object value) {
-		Node<K> node = data.get(key);
+		Node node = data.get(key);
 		if ((node != null) && node.value.equals(value) && data.remove(key, new Identity(node))) {
 			length.decrementAndGet();
 			memoryUsed.addAndGet(-1 * node.getValue().size());
@@ -352,11 +308,11 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	 * {@inheritDoc}
 	 */
 	@Override
-	public CacheElement replace(K key, CacheElement value) {
+	public CacheElement replace(Key key, CacheElement value) {
 		if (value == null) {
 			throw new IllegalArgumentException();
 		}
-		Node<K> node = data.get(key);
+		Node node = data.get(key);
 		if (node == null)
 			return null;
 		else {
@@ -371,11 +327,11 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	 * {@inheritDoc}
 	 */
 	@Override
-	public boolean replace(K key, CacheElement oldValue, CacheElement newValue) {
+	public boolean replace(Key key, CacheElement oldValue, CacheElement newValue) {
 		if (newValue == null) {
 			throw new IllegalArgumentException();
 		}
-		Node<K> node = data.get(key);
+		Node node = data.get(key);
 		if (node == null)
 			return false;
 		else {
@@ -392,7 +348,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Set<K> keySet() {
+	public Set<Key> keySet() {
 		return new KeySet();
 	}
 	
@@ -408,21 +364,21 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Set<Entry<K, CacheElement>> entrySet() {
+	public Set<Entry<Key, CacheElement>> entrySet() {
 		return new EntrySet();
 	}
 	
 	/**
 	 * A listener registered for notification when an entry is evicted.
 	 */
-	public interface EvictionListener<K> {
+	public interface EvictionListener {
 		
 		/**
 		 * A call-back notification that the entry was evicted.
 		 * @param key The evicted key.
 		 * @param value The evicted value.
 		 */
-		void onEviction(K key, CacheElement value);
+		void onEviction(Key key, CacheElement value);
 	}
 	
 	/**
@@ -435,12 +391,12 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 		 */
 		FIFO() {
 			@Override
-			<K> void onAccess(ConcurrentLinkedHashMap<K> map, Node<K> node) {
+			void onAccess(ConcurrentLinkedHashMap map, Node node) {
 				// do nothing
 			}
 			
 			@Override
-			<K> boolean onEvict(ConcurrentLinkedHashMap<K> map, Node<K> node) {
+			boolean onEvict(ConcurrentLinkedHashMap map, Node node) {
 				return true;
 			}
 		},
@@ -450,12 +406,12 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 		 */
 		SECOND_CHANCE() {
 			@Override
-			<K> void onAccess(ConcurrentLinkedHashMap<K> map, Node<K> node) {
+			void onAccess(ConcurrentLinkedHashMap map, Node node) {
 				node.setMarked(true);
 			}
 			
 			@Override
-			<K> boolean onEvict(ConcurrentLinkedHashMap<K> map, Node<K> node) {
+			boolean onEvict(ConcurrentLinkedHashMap map, Node node) {
 				if (node.isMarked()) {
 					node.moveToTail();
 					node.setMarked(false);
@@ -470,12 +426,12 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 		 */
 		LRU() {
 			@Override
-			<K> void onAccess(ConcurrentLinkedHashMap<K> map, Node<K> node) {
+			void onAccess(ConcurrentLinkedHashMap map, Node node) {
 				node.moveToTail();
 			}
 			
 			@Override
-			<K> boolean onEvict(ConcurrentLinkedHashMap<K> map, Node<K> node) {
+			boolean onEvict(ConcurrentLinkedHashMap map, Node node) {
 				return true;
 			}
 		};
@@ -483,31 +439,30 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 		/**
 		 * Performs any operations required by the policy after a node was successfully retrieved.
 		 */
-		abstract <K> void onAccess(ConcurrentLinkedHashMap<K> map, Node<K> node);
+		abstract void onAccess(ConcurrentLinkedHashMap map, Node node);
 		
 		/**
 		 * Determines whether to evict the node at the head of the list.
 		 */
-		abstract <K> boolean onEvict(ConcurrentLinkedHashMap<K> map, Node<K> node);
+		abstract boolean onEvict(ConcurrentLinkedHashMap map, Node node);
 	}
 	
 	/**
 	 * A node on the double-linked list. This list cross-cuts the data store.
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	protected static final class Node<K> implements Serializable {
+	protected static final class Node implements Serializable {
 		private static final long serialVersionUID = 1461281468985304519L;
 		private static final AtomicReferenceFieldUpdater<Node, CacheElement> valueUpdater = AtomicReferenceFieldUpdater.newUpdater(Node.class, CacheElement.class, "value");
 		private static final Node UNLINKED = new Node(null);
 		
-		private final K key;
+		private final Key key;
 		private final Lock lock;
-		private final Node<K> sentinel;
+		private final Node sentinel;
 		
 		private volatile CacheElement value;
 		private volatile boolean marked;
-		private volatile Node<K> prev;
-		private volatile Node<K> next;
+		private volatile Node prev;
+		private volatile Node next;
 		
 		/**
 		 * Creates a new sentinel node.
@@ -524,7 +479,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 		/**
 		 * Creates a new, unlinked node.
 		 */
-		public Node(K key, CacheElement value, Node<K> sentinel, Lock lock) {
+		public Node(Key key, CacheElement value, Node sentinel, Lock lock) {
 			this.sentinel = sentinel;
 			this.next = UNLINKED;
 			this.prev = UNLINKED;
@@ -543,7 +498,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 				next = sentinel;
 				
 				// Read the tail on the stack to avoid unnecessary volatile reads
-				final Node<K> tail = sentinel.prev;
+				final Node tail = sentinel.prev;
 				sentinel.prev = this;
 				tail.next = this;
 				prev = tail;
@@ -625,7 +580,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 		/*
 		 * Key operators
 		 */
-		public K getKey() {
+		public Key getKey() {
 			return key;
 		}
 		
@@ -647,14 +602,14 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 		/*
 		 * Previous node operators
 		 */
-		public Node<K> getPrev() {
+		public Node getPrev() {
 			return prev;
 		}
 		
 		/*
 		 * Next node operators
 		 */
-		public Node<K> getNext() {
+		public Node getNext() {
 			return next;
 		}
 		
@@ -680,7 +635,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 				return false;
 			}
 			CacheElement value = getValue();
-			Node<?> node = (Node<?>) obj;
+			Node node = (Node) obj;
 			return (value == null) ? (node.getValue() == null) : value.equals(node.getValue());
 		}
 		
@@ -699,7 +654,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 			}
 		}
 		
-		private String valueOf(K key) {
+		private String valueOf(Key key) {
 			return (key == null) ? "sentinel" : key.toString();
 		}
 	}
@@ -723,8 +678,8 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	/**
 	 * An adapter to safely externalize the keys.
 	 */
-	private final class KeySet extends AbstractSet<K> {
-		private final ConcurrentLinkedHashMap<K> map = ConcurrentLinkedHashMap.this;
+	private final class KeySet extends AbstractSet<Key> {
+		private final ConcurrentLinkedHashMap map = ConcurrentLinkedHashMap.this;
 		
 		@Override
 		public int size() {
@@ -737,7 +692,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 		}
 		
 		@Override
-		public Iterator<K> iterator() {
+		public Iterator<Key> iterator() {
 			return new KeyIterator();
 		}
 		
@@ -765,7 +720,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	/**
 	 * An adapter to safely externalize the keys.
 	 */
-	private final class KeyIterator implements Iterator<K> {
+	private final class KeyIterator implements Iterator<Key> {
 		private final EntryIterator iterator = new EntryIterator(ConcurrentLinkedHashMap.this.data.values().iterator());
 		
 		@Override
@@ -774,7 +729,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 		}
 		
 		@Override
-		public K next() {
+		public Key next() {
 			return iterator.next().getKey();
 		}
 		
@@ -788,7 +743,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	 * An adapter to represent the data store's values in the external type.
 	 */
 	private final class Values extends AbstractCollection<CacheElement> {
-		private final ConcurrentLinkedHashMap<K> map = ConcurrentLinkedHashMap.this;
+		private final ConcurrentLinkedHashMap map = ConcurrentLinkedHashMap.this;
 		
 		@Override
 		public int size() {
@@ -854,8 +809,8 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	/**
 	 * An adapter to represent the data store's entry set in the external type.
 	 */
-	private final class EntrySet extends AbstractSet<Entry<K, CacheElement>> {
-		private final ConcurrentLinkedHashMap<K> map = ConcurrentLinkedHashMap.this;
+	private final class EntrySet extends AbstractSet<Entry<Key, CacheElement>> {
+		private final ConcurrentLinkedHashMap map = ConcurrentLinkedHashMap.this;
 		
 		@Override
 		public int size() {
@@ -868,7 +823,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 		}
 		
 		@Override
-		public Iterator<Entry<K, CacheElement>> iterator() {
+		public Iterator<Entry<Key, CacheElement>> iterator() {
 			return new EntryIterator(map.data.values().iterator());
 		}
 		
@@ -878,12 +833,12 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 				return false;
 			}
 			Entry<?, ?> entry = (Entry<?, ?>) obj;
-			Node<K> node = map.data.get(entry.getKey());
+			Node node = map.data.get(entry.getKey());
 			return (node != null) && (node.value.equals(entry.getValue()));
 		}
 		
 		@Override
-		public boolean add(Entry<K, CacheElement> entry) {
+		public boolean add(Entry<Key, CacheElement> entry) {
 			return (map.putIfAbsent(entry.getKey(), entry.getValue()) == null);
 		}
 		
@@ -898,18 +853,18 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 		
 		@Override
 		public Object[] toArray() {
-			Collection<Entry<K, CacheElement>> entries = new ArrayList<Entry<K, CacheElement>>(size());
-			for (Entry<K, CacheElement> entry : this) {
-				entries.add(new SimpleEntry<K>(entry));
+			Collection<Entry<Key, CacheElement>> entries = new ArrayList<Entry<Key, CacheElement>>(size());
+			for (Entry<Key, CacheElement> entry : this) {
+				entries.add(new SimpleEntry(entry));
 			}
 			return entries.toArray();
 		}
 		
 		@Override
 		public <T> T[] toArray(T[] array) {
-			Collection<Entry<K, CacheElement>> entries = new ArrayList<Entry<K, CacheElement>>(size());
-			for (Entry<K, CacheElement> entry : this) {
-				entries.add(new SimpleEntry<K>(entry));
+			Collection<Entry<Key, CacheElement>> entries = new ArrayList<Entry<Key, CacheElement>>(size());
+			for (Entry<Key, CacheElement> entry : this) {
+				entries.add(new SimpleEntry(entry));
 			}
 			return entries.toArray(array);
 		}
@@ -918,11 +873,11 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	/**
 	 * An adapter to represent the data store's entry iterator in the external type.
 	 */
-	private final class EntryIterator implements Iterator<Entry<K, CacheElement>> {
-		private final Iterator<Node<K>> iterator;
-		private Entry<K, CacheElement> current;
+	private final class EntryIterator implements Iterator<Entry<Key, CacheElement>> {
+		private final Iterator<Node> iterator;
+		private Entry<Key, CacheElement> current;
 		
-		public EntryIterator(Iterator<Node<K>> iterator) {
+		public EntryIterator(Iterator<Node> iterator) {
 			this.iterator = iterator;
 		}
 		
@@ -932,7 +887,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 		}
 		
 		@Override
-		public Entry<K, CacheElement> next() {
+		public Entry<Key, CacheElement> next() {
 			current = new NodeEntry(iterator.next());
 			return current;
 		}
@@ -950,16 +905,16 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	/**
 	 * An entry that is tied to the map instance to allow updates through the entry or the map to be visible.
 	 */
-	private final class NodeEntry implements Entry<K, CacheElement> {
-		private final ConcurrentLinkedHashMap<K> map = ConcurrentLinkedHashMap.this;
-		private final Node<K> node;
+	private final class NodeEntry implements Entry<Key, CacheElement> {
+		private final ConcurrentLinkedHashMap map = ConcurrentLinkedHashMap.this;
+		private final Node node;
 		
-		public NodeEntry(Node<K> node) {
+		public NodeEntry(Node node) {
 			this.node = node;
 		}
 		
 		@Override
-		public K getKey() {
+		public Key getKey() {
 			return node.getKey();
 		}
 		
@@ -992,7 +947,7 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 		
 		@Override
 		public int hashCode() {
-			K key = getKey();
+			Key key = getKey();
 			CacheElement value = getValue();
 			return ((key == null) ? 0 : key.hashCode()) ^ ((value == null) ? 0 : value.hashCode());
 		}
@@ -1010,17 +965,17 @@ public final class ConcurrentLinkedHashMap<K> extends AbstractMap<K, CacheElemen
 	/**
 	 * This duplicates {@link java.util.AbstractMap.SimpleEntry} until the class is made accessible (public in JDK-6).
 	 */
-	private static class SimpleEntry<K> implements Entry<K, CacheElement> {
-		private final K key;
+	private static class SimpleEntry implements Entry<Key, CacheElement> {
+		private final Key key;
 		private CacheElement value;
 		
-		public SimpleEntry(Entry<K, CacheElement> e) {
+		public SimpleEntry(Entry<Key, CacheElement> e) {
 			this.key = e.getKey();
 			this.value = e.getValue();
 		}
 		
 		@Override
-		public K getKey() {
+		public Key getKey() {
 			return key;
 		}
 		

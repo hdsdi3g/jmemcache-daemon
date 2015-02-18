@@ -20,17 +20,15 @@ public final class MemcachedPipelineFactory implements ChannelPipelineFactory {
 	private boolean verbose;
 	private int idleTime;
 	
-	// private int frameSize;
 	private DefaultChannelGroup channelGroup;
 	private final MemcachedResponseEncoder memcachedResponseEncoder = new MemcachedResponseEncoder();
 	
 	private final MemcachedCommandHandler memcachedCommandHandler;
 	
-	public MemcachedPipelineFactory(Cache cache, boolean verbose, int idleTime, int frameSize, DefaultChannelGroup channelGroup) {
+	public MemcachedPipelineFactory(Cache cache, boolean verbose, int idleTime, DefaultChannelGroup channelGroup) {
 		this.cache = cache;
 		this.verbose = verbose;
 		this.idleTime = idleTime;
-		// this.frameSize = frameSize;
 		this.channelGroup = channelGroup;
 		memcachedCommandHandler = new MemcachedCommandHandler(this.cache, this.verbose, this.idleTime, this.channelGroup);
 	}

@@ -34,7 +34,7 @@ import com.thimbleware.jmemcached.protocol.text.MemcachedPipelineFactory;
  */
 public class MemCacheDaemon {
 	
-	private int frameSize = 32768 * 1024;
+	// private int frameSize = 32768 * 1024;
 	
 	private boolean verbose;
 	private int idleTime;
@@ -63,7 +63,7 @@ public class MemCacheDaemon {
 		
 		ServerBootstrap bootstrap = new ServerBootstrap(channelFactory);
 		
-		ChannelPipelineFactory pipelineFactory = new MemcachedPipelineFactory(cache, verbose, idleTime, frameSize, allChannels);
+		ChannelPipelineFactory pipelineFactory = new MemcachedPipelineFactory(cache, verbose, idleTime, allChannels);
 		
 		bootstrap.setPipelineFactory(pipelineFactory);
 		bootstrap.setOption("sendBufferSize", 65536);
@@ -73,6 +73,7 @@ public class MemCacheDaemon {
 		allChannels.add(serverChannel);
 		
 		System.out.println("Start listening on " + String.valueOf(addr.getHostName()) + ":" + addr.getPort());
+		
 		running = true;
 	}
 	

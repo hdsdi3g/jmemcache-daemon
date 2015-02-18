@@ -34,11 +34,11 @@ public final class Cache {
 		DELETED, NOT_FOUND
 	}
 	
-	final ConcurrentLinkedHashMap<Key> storage;
+	final ConcurrentLinkedHashMap storage;
 	final DelayQueue<DelayedMCElement> deleteQueue;
 	private final ScheduledExecutorService scavenger;
 	
-	public Cache(ConcurrentLinkedHashMap<Key> storage) {
+	public Cache(ConcurrentLinkedHashMap storage) {
 		started.set(System.currentTimeMillis());
 		// getCmds.set(0);
 		// setCmds.set(0);
@@ -270,7 +270,6 @@ public final class Cache {
 	 */
 	public void close() throws IOException {
 		scavenger.shutdown();
-		;
 		storage.close();
 	}
 	
